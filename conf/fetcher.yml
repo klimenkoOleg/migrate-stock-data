@@ -1,0 +1,8 @@
+postgres:
+  dsn: "postgresql://postgres:postgres@127.0.0.1:5432/test?sslmode=disable" # e.g. "postgres://localhost:5431"
+parquet:
+  file:
+    path: "test2.parquet"
+date: # format: "yyyy-mm-dd"
+  start: "2023-01-01"
+  end: "2023-02-01"
