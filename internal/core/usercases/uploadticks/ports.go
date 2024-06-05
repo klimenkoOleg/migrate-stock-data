@@ -6,13 +6,12 @@ import (
 )
 
 type ObjectReader interface {
-	//HasNext() bool
-	Read([]dto.Tick1Day) (int, error)
+	Read(*[]dto.Tick1Day) (int, error)
 	Close() error
 }
 
 type Repo interface {
-	WriteTick(ctx context.Context, tick []dto.Tick1Day) error
-	Close()
+	WriteTick(tick []dto.Tick1Day) error
 	Flush(ctx context.Context) error
+	Close() error
 }

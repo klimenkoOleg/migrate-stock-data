@@ -16,7 +16,7 @@ type Closer struct {
 	sync.Mutex
 	once       sync.Once
 	closers    []io.Closer
-	closeFuncs []func()
+	closeFuncs []func() error
 	sigCh      chan os.Signal
 	sigs       []os.Signal
 	timeout    time.Duration
@@ -63,7 +63,7 @@ func (c *Closer) AddCloser(cl io.Closer) {
 }
 
 // AddCloseFunc any func() that will be run on exit
-func (c *Closer) AddCloseFunc(f func()) {
+func (c *Closer) AddCloseFunc(f func() error) {
 	c.Lock()
 	defer c.Unlock()
 	c.closeFuncs = append(c.closeFuncs, f)
@@ -102,9 +102,12 @@ func (c *Closer) drop() {
 
 		for _, cf := range c.closeFuncs {
 			wg.Add(1)
-			go func(cf func()) {
+			go func(cf func() error) {
 				defer wg.Done()
-				cf()
+				err := cf()
+				if err != nil {
+					c.logger.Error("during closing app", zap.Error(err))
+				}
 			}(cf)
 		}
 

@@ -34,7 +34,7 @@ func MustLoadConfig(log *zap.Logger, configYamlFile string) *Config {
 		fmt.Println(f.FlagUsages())
 		os.Exit(0)
 	}
-	f.String("target", "xxx", "target upload type: 'postgres' or 'milvius'")
+	f.String("target", "xxx", "target upload type: 'postgres' or 'milvus'")
 	f.Parse(os.Args[1:])
 
 	// Defaults

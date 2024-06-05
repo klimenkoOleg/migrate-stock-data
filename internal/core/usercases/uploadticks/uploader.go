@@ -2,62 +2,43 @@ package uploadticks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/klimenkoOleg/migrate-stock-data/internal/core/dto"
+	"github.com/labstack/gommon/log"
+	"go.uber.org/zap"
+	"io"
 )
 
-type TickDumperService struct {
+type TickUploaderService struct {
 	repo         Repo
 	objectReader ObjectReader
 	batchSize    int
-	maxRecords   int
 }
 
-func NewTickDumperService(Repo Repo, ObjectReader ObjectReader, batchSize, maxRecords int) *TickDumperService {
-	return &TickDumperService{repo: Repo, objectReader: ObjectReader, batchSize: batchSize, maxRecords: maxRecords}
+func NewTickDumperService(Repo Repo, ObjectReader ObjectReader, batchSize int) *TickUploaderService {
+	return &TickUploaderService{repo: Repo, objectReader: ObjectReader, batchSize: batchSize}
 }
 
-func (s *TickDumperService) ImportFromStorageToDatabase(ctx context.Context) error {
-
-	ticks := make([]dto.Tick1Day, s.batchSize)
-	count := 1
-
+func (s *TickUploaderService) ImportFromStorageToDatabase(ctx context.Context) error {
+	ticks := make([]dto.Tick1Day, 0, s.batchSize)
 	for {
-		//ticks := make([]dto.Tick1Day, len())
-		numRead, err := s.objectReader.Read(ticks)
+		ticks = ticks[:cap(ticks)]
+		numRead, err := s.objectReader.Read(&ticks)
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			return fmt.Errorf("object reader failed, %w", err)
 		}
-		if numRead == 0 {
-			break
-		}
-		//if err != nil {
-		//	if errors.Is(err, io.EOF) {
-		//		break
-		//	}
-		//	return fmt.Errorf("object reader failed, %w", err)
-		//}
-
-		if count == 1 {
-			fmt.Printf("%+v\n", ticks[0])
-		}
-
 		ticks = ticks[:numRead]
-
-		//ticks = append(ticks, *tick)
-
-		//if count%s.batchSize == 0 {
-		err = s.repo.WriteTick(ctx, ticks)
+		err = s.repo.WriteTick(ticks)
 		if err != nil {
 			return fmt.Errorf("repo write failed, %w", err)
 		}
-		ticks = ticks[:0]
-		//}
-
-		//if count > s.maxRecords {
-		//	break
-		//}
-		count++
+	}
+	if err := s.repo.Flush(ctx); err != nil {
+		log.Error("repo flush failed", zap.Error(err))
 	}
 
 	return nil

@@ -6,10 +6,11 @@ import (
 	"github.com/xitongsys/parquet-go-source/local"
 	"github.com/xitongsys/parquet-go/reader"
 	"github.com/xitongsys/parquet-go/source"
+	"io"
 	"time"
 )
 
-type TickParquetReader struct {
+type TicksParquetReader struct {
 	fr source.ParquetFile
 	pr *reader.ParquetReader
 	//totalCount int64
@@ -18,7 +19,7 @@ type TickParquetReader struct {
 	endDate   *time.Time
 }
 
-func NewTickParquetReader(fileName string, startDate, endDate *time.Time) (*TickParquetReader, error) {
+func NewTickParquetReader(fileName string, startDate, endDate *time.Time) (*TicksParquetReader, error) {
 	fr, err := local.NewLocalFileReader(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("can't open file, %w", err)
@@ -35,32 +36,36 @@ func NewTickParquetReader(fileName string, startDate, endDate *time.Time) (*Tick
 	//endDT := datetime.Datetime{Month: 5, Day: 5, Year: 2024}
 	//end := endDT.Time()
 
-	return &TickParquetReader{fr: fr, pr: pr, startDate: startDate, endDate: endDate}, nil
+	return &TicksParquetReader{fr: fr, pr: pr, startDate: startDate, endDate: endDate}, nil
 }
 
-//func (p *TickParquetReader) HasNext() bool {
+//func (p *TicksParquetReader) HasNext() bool {
 //	return p.num > 0
 //}
 
-func (p *TickParquetReader) Read(ticks []dto.Tick1Day) (int, error) {
+func (p *TicksParquetReader) Read(ticks *[]dto.Tick1Day) (int, error) {
 	//if p.num <= 0 {
 	//	return nil, errors.New("no data")
 	//}
-
+	//n, err := io.ReadFull()Read(buf[:cap(buf)])
 	//for p.num > 0 {
-	//ticks = make([]dto.Tick1Day, 1_000)
-	err := p.pr.Read(&ticks)
+	//buf := make([]dto.Tick1Day, len(ticks))
+	err := p.pr.Read(ticks)
 	if err != nil {
 		return 0, fmt.Errorf("read error, %w", err)
 	}
+	if len(*ticks) == 0 {
+		return 0, io.EOF
+	}
+	//copy(ticks, buf)
 	//p.num--
 
 	target := 0
 
-	for _, tick := range ticks {
+	for _, tick := range *ticks {
 		date := time.UnixMilli(tick.Date)
 		if p.startDate != nil && p.endDate != nil && date.After(*p.startDate) && date.Before(*p.endDate) {
-			ticks[target] = tick
+			(*ticks)[target] = tick
 			target++
 			//return &ticks[0], nil
 		}
@@ -76,7 +81,7 @@ func (p *TickParquetReader) Read(ticks []dto.Tick1Day) (int, error) {
 	return target, nil
 }
 
-func (p *TickParquetReader) Close() error {
+func (p *TicksParquetReader) Close() error {
 	p.pr.ReadStop()
 	return p.fr.Close()
 }

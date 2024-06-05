@@ -23,9 +23,11 @@ func New(config *Config, log *zap.Logger) *App {
 
 func (a *App) Run(ctx context.Context, cancel context.CancelFunc, worker Worker) {
 	appCloser := common.New(5*time.Second, a.log)
-	appCloser.AddCloseFunc(cancel)
+	appCloser.AddCloseFunc(func() error {
+		cancel()
+		return nil
+	})
 
-	//a.init(ctx, appCloser)
 	err := worker.Do(ctx, appCloser) // doesn't block execution
 	if err != nil {
 		appCloser.Close()

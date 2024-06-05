@@ -21,7 +21,7 @@ type ClickhouseReader interface {
 	Prepare(ctx context.Context, startDate time.Time, endDate time.Time) error
 }
 
-func (s *TickFetcherService) Do(ctx context.Context, startDate time.Time, endDate time.Time) error {
+func (s *TickFetcherService) FetchFromDBtoParquet(ctx context.Context, startDate time.Time, endDate time.Time) error {
 	err := s.repo.Prepare(ctx, startDate, endDate)
 	if err != nil {
 		return fmt.Errorf("failed fetch, %w", err)

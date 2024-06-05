@@ -18,73 +18,27 @@ type DBDX interface {
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 }
 
-type Repo struct {
+type Dataseries struct {
 	db   DBDX
 	rows *pgx.Rows
 	log  *zap.Logger
 }
 
-func NewRepo(db DBDX, log *zap.Logger) *Repo {
-	return &Repo{db: db, log: log}
+func New(db DBDX, log *zap.Logger) *Dataseries {
+	return &Dataseries{db: db, log: log}
 }
 
-//const addTick = `-- name: CreatePayment :exec
-//INSERT INTO tick1d
-//(stock_name, instrument_id, tick_date, max, min, avg, median)
-//VALUES
-//    ($1, $2, $3, $4, $5, $6, $7);
-//`
-
-func (r *Repo) WriteTick(_ context.Context, ticks []dto.Tick1Day) error {
+func (r *Dataseries) WriteTick(ticks []dto.Tick1Day) error {
 	columns := []string{"stock_name", "instrument_id", "tick_date", "max", "min", "avg", "median"}
-
 	sq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).Insert("tick1d").Columns(columns...)
-
 	for _, tick := range ticks {
-
-		stockName := "BSE"
-		if tick.StockName == 1 {
-			stockName = "NSE"
-		}
-
-		rowVals := []interface{}{
-			stockName,
-			tick.InstrumentId,
-			tick.Date,
-			tick.Max,
-			tick.Min,
-			tick.Avg,
-			tick.Median,
-		}
+		rowVals := mapTick(tick)
 		sq = sq.Values(rowVals...)
 	}
-
 	sql, args, err := sq.ToSql()
 	if err != nil {
 		return fmt.Errorf("error building SQL for inserting tick, sql=%v, err=%w", err, sql)
 	}
-
-	//_, err := r.db.Exec(ctx, addTick,
-	//	stockName,
-	//	tick.InstrumentId,
-	//	tick.Date,
-	//	tick.Max,
-	//	tick.Min,
-	//	tick.Avg,
-	//	tick.Median,
-	//)
-
-	//vals, _ := d.Values()
-	//values := append(vals, d.AvgSquarePrice, d.CreatedAt, d.LatestDeveloperItemStartTime)
-
-	//queryBuilder := sq.StatementBuilder.
-	//	PlaceholderFormat(sq.Dollar).
-	//	Insert("development").
-	//	Columns(columns...).
-	//	Values(values...)
-	//query, args, err := queryBuilder.ToSql()
-	//require.NoError(t, err)
-
 	_, err = r.db.Exec(context.Background(), sql, args...)
 	if err != nil {
 		return fmt.Errorf("error inserting tick, sql=%v, args=%+v, err=%w", sql, args, err)
@@ -92,14 +46,36 @@ func (r *Repo) WriteTick(_ context.Context, ticks []dto.Tick1Day) error {
 	return err
 }
 
-func (r *Repo) Close() {
+func mapTick(tick dto.Tick1Day) []interface{} {
+	rowVals := []interface{}{
+		mapStockName(tick),
+		tick.InstrumentId,
+		tick.Date,
+		tick.Max,
+		tick.Min,
+		tick.Avg,
+		tick.Median,
+	}
+	return rowVals
 }
 
-func (r *Repo) Flush(_ context.Context) error {
+func mapStockName(tick dto.Tick1Day) string {
+	stockName := "BSE"
+	if tick.StockName == 1 {
+		stockName = "NSE"
+	}
+	return stockName
+}
+
+func (r *Dataseries) Close() error {
 	return nil
 }
 
-func (r *Repo) Prepare(ctx context.Context, startDate time.Time, endDate time.Time) error {
+func (r *Dataseries) Flush(_ context.Context) error {
+	return nil
+}
+
+func (r *Dataseries) Prepare(ctx context.Context, startDate time.Time, endDate time.Time) error {
 	stmt := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).
 		Select("stock_name", "instrument_id", "tick_date", "max", "min", "avg", "median").
 		From("tick1d").
@@ -119,7 +95,7 @@ func (r *Repo) Prepare(ctx context.Context, startDate time.Time, endDate time.Ti
 	return nil
 }
 
-func (r *Repo) Scan() (any, error) {
+func (r *Dataseries) Scan() (any, error) {
 	tick := dto.Tick1Day{}
 	if r.rows == nil {
 		return tick, fmt.Errorf("scan before initialization: call Prepare first")
@@ -138,7 +114,7 @@ func (r *Repo) Scan() (any, error) {
 	return tick, nil
 }
 
-func (r *Repo) Next() bool {
+func (r *Dataseries) Next() bool {
 	if r.rows == nil {
 		log.Fatal("Scan before initialization: call Prepare first")
 	}

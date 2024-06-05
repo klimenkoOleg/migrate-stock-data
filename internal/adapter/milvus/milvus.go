@@ -1,4 +1,4 @@
-package milvius
+package milvus
 
 import (
 	"context"
@@ -20,26 +20,24 @@ const (
 	collectionName = "ticks1day"
 )
 
-type Milvius struct {
+type Milvus struct {
 	config *app.Config
 	log    *zap.Logger
-	//dim      int
 	client client.Client
 	data   map[int64][]float64
 	dates  map[int64][]string
 }
 
-func NewMilvius(config *app.Config, log *zap.Logger) *Milvius {
-	return &Milvius{
+func NewMilvus(config *app.Config, log *zap.Logger) *Milvus {
+	return &Milvus{
 		config: config,
 		log:    log,
 		data:   make(map[int64][]float64),
 		dates:  make(map[int64][]string),
-		//dim:    dim,
 	}
 }
 
-func (m *Milvius) prepare(ctx context.Context, dim int64) {
+func (m *Milvus) prepare(ctx context.Context, dim int64) {
 	c, err := client.NewClient(ctx, client.Config{
 		Address: m.config.MilvusServer,
 	})
@@ -80,80 +78,30 @@ func (m *Milvius) prepare(ctx context.Context, dim int64) {
 	//m.data = make(map[int64][]float32)
 }
 
-func (m *Milvius) WriteTick(_ context.Context, ticks []dto.Tick1Day) error {
-
-	// row-base covert to column-base
-
-	//vector := make([]float32, 80) // TODO: use config for 80
-
-	// string field is not supported yet
-	//idTitle := make(map[int64]string)
-	//data := make(map[int64]float32)
-
+func (m *Milvus) WriteTick(ticks []dto.Tick1Day) error {
 	for _, tick := range ticks {
-
 		vector, ok := m.data[tick.InstrumentId]
-		//dates := m.dates[tick.InstrumentId]
 		if !ok {
 			diff := m.config.DateEnded.Sub(*m.config.DateStarted)
 			days := int64(diff.Hours() / 24)
 			vector = make([]float64, days)
-			//dates = make([]string, days)
 		}
-		//id := dateToId(tick.Date, *m.config.DateStarted)
-		//if math.Abs(tick.Avg) < 1e-4 || m.skipDays[id] {
-		//	m.skipDays[id] = true
-		//	continue
-		//}
-
 		id := dateToId(tick.Date, *m.config.DateStarted)
 		vector[id] = float64(tick.Avg / 100_000_000)
-		//dates[id] = time.UnixMilli(tick.Date).Format("2006-01-02")
 		m.data[tick.InstrumentId] = vector
-		//m.dates[tick.InstrumentId] = dates
-
-		//idx := calcIdxStartingFromStartDate(tick.Date, m.config.DateStarted)
-		// caring about duplicates in dates
-		//data[dateToId(tick.Date, *m.config.DateStarted)] = float32(tick.Avg)
-		//vector[dateToId(tick.Date, *m.config.DateStarted)] = float32(tick.Avg)
-
-		//ids = append(ids, dateToId(film.Date))  // use symbol
-		//idTitle[film.ID] = film.Title
-		//years = append(years, dateToId(film.Date))
-		//vectors = append(vectors, float32(film.Avg)) // films[idx].Vector[:]) // prevent same vector
 	}
-	//m.ids = append(m.ids, ticks[0].InstrumentId)
-	//m.vectors = append(m.vectors, vector)
-
-	//for k, v := range data {
-	//    m.vectors = append(m.vectors, v)
-	//}
 
 	return nil
 }
 
-func (m *Milvius) Flush(ctx context.Context) error {
+func (m *Milvus) Flush(ctx context.Context) error {
 	ids := make([]int64, 0, len(m.data))
 	vectors := make([][]float64, 0, len(m.data))
-	//dates := make([]string, 0, len(m.dates))
 
 	for k, v := range m.data {
 		ids = append(ids, k)
 		vectors = append(vectors, v)
-		//dates = append(dates, m.dates[k])
 	}
-
-	//for _, v := range m.dates /{
-	//	dates = append(dates, v)
-	//}
-
-	//vectorSeries := make([]series.Series, 0)
-	//for i, v := range vectors {
-	//	fmt.Println(v)
-	//	vectorSeries = append(vectorSeries, series.New(v, series.Float, strconv.Itoa(int(ids[i]))))
-	//}
-
-	//dates := series.New(dates, series.String, "dates")
 	df := dataframe.New(series.New(vectors[0], series.Float, strconv.Itoa(int(ids[0]))))
 
 	for i, v := range vectors {
@@ -161,33 +109,15 @@ func (m *Milvius) Flush(ctx context.Context) error {
 			continue
 		}
 		df2add := dataframe.New(series.New(v, series.Float, strconv.Itoa(int(ids[i]))))
-		//fmt.Println(df)
-		//fmt.Println(df2add)
 		df = df.CBind(df2add)
-		//if i == 3 {
-		//	break
-		//}
 	}
-
-	//fmt.Println(df)
 
 	df = df.Filter(
 		dataframe.F{Colidx: 0, Comparator: series.Greater, Comparando: 1e-4},
 	)
-
-	fmt.Println(df)
-
-	//vectors := map([][]float64, 0)
-	//for _, instrumentId := range df.Names() {
-	//}
-
 	vectors32 := make([][]float32, 0)
 
-	varMax := 0.
-	varMaxId := ids[0]
-
 	for _, id := range ids {
-		//ids = append(ids, id)
 		vector := df.Col(strconv.Itoa(int(id))).Float()
 		targetVector := make([]float32, len(vector))
 		varItem := vector[0]
@@ -199,34 +129,13 @@ func (m *Milvius) Flush(ctx context.Context) error {
 				varItem = v
 			}
 		}
-
-		if varValue > varMax {
-			varMax = varValue
-			varMaxId = id
-		}
-
 		vectors32 = append(vectors32, targetVector)
-		//dates = append(dates, m.dates[k])
 	}
-
-	fmt.Println("varMaxId!!!", varMaxId)
-
-	fmt.Println(vectors)
-
-	//os.Exit(0)
-
-	//for i := 0; i <
-	//
 	dim := df.Nrow()
 	m.prepare(ctx, int64(dim))
 
 	idColumn := entity.NewColumnInt64("ID", ids)
-	//yearColumn := entity.NewColumnInt64("Year", years)
 	vectorColumn := entity.NewColumnFloatVector("Vector", dim, vectors32) //entity.NewColumnFloatVector("Vector", dim, vectors)
-
-	//v1 := series.New([]float64{3.0, 4.0}, series.Float, "COL.3")
-	//v1.
-
 	if _, err := m.client.Insert(ctx, collectionName, "", idColumn, vectorColumn); err != nil {
 		return fmt.Errorf("failed to insert tick1day data, %w", err)
 	}
@@ -244,21 +153,18 @@ func (m *Milvius) Flush(ctx context.Context) error {
 		log.Fatal("fail to create index:", err.Error())
 	}
 
-	//sidx := entity.NewScalarIndex()
-	//if err := m.client.CreateIndex(ctx, collectionName, "Year", sidx, false); err != nil {
-	//	log.Fatal("failed to create scalar index", err.Error())
-	//}
-
 	return nil
 }
 
-func (m *Milvius) Close() {
+func (m *Milvus) Close() error {
 	// clean up
 	//_ = c.DropCollection(ctx, collectionName)
 	if err := m.client.Close(); err != nil {
-		m.log.Error("failed to close client: %w", zap.Error(err))
+		return fmt.Errorf("failed to close client: %w", zap.Error(err))
 	}
 	m.client = nil
+
+	return nil
 }
 
 func dateToId(timestamp int64, startDate time.Time) int64 {
