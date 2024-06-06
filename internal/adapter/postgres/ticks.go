@@ -13,24 +13,26 @@ import (
 	"time"
 )
 
-type DBDX interface {
+type DB interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 }
 
 type Dataseries struct {
-	db   DBDX
+	db   DB
 	rows *pgx.Rows
 	log  *zap.Logger
 }
 
-func New(db DBDX, log *zap.Logger) *Dataseries {
+func New(db DB, log *zap.Logger) *Dataseries {
 	return &Dataseries{db: db, log: log}
 }
 
 func (r *Dataseries) WriteTick(ticks []dto.Tick1Day) error {
 	columns := []string{"stock_name", "instrument_id", "tick_date", "max", "min", "avg", "median"}
-	sq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).Insert("tick1d").Columns(columns...)
+	sq := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).
+		Insert("tick1d").
+		Columns(columns...)
 	for _, tick := range ticks {
 		rowVals := mapTick(tick)
 		sq = sq.Values(rowVals...)

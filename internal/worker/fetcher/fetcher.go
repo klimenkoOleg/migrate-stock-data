@@ -27,7 +27,10 @@ func (w *UploadWorker) Do(ctx context.Context, appCloser *common.Closer) error {
 	if err != nil {
 		return fmt.Errorf("connect to Postgres, %w", err)
 	}
-	appCloser.AddCloseFunc(pool.Close)
+	appCloser.AddCloseFunc(func() error {
+		pool.Close()
+		return nil
+	})
 	pgRepo := postgres.New(pool, w.log)
 
 	writer, err := parquet.NewTickParquetWriter(w.config.ParquetPath)

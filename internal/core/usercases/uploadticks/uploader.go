@@ -16,7 +16,7 @@ type TickUploaderService struct {
 	batchSize    int
 }
 
-func NewTickDumperService(Repo Repo, ObjectReader ObjectReader, batchSize int) *TickUploaderService {
+func NewTickUploaderService(Repo Repo, ObjectReader ObjectReader, batchSize int) *TickUploaderService {
 	return &TickUploaderService{repo: Repo, objectReader: ObjectReader, batchSize: batchSize}
 }
 

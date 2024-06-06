@@ -14,12 +14,6 @@ github.com/Masterminds/squirrel
 # github.com/apache/thrift v0.0.0-20181112125854-24918abba929
 ## explicit
 github.com/apache/thrift/lib/go/thrift
-# github.com/aymanbagabas/go-osc52/v2 v2.0.1
-## explicit; go 1.16
-github.com/aymanbagabas/go-osc52/v2
-# github.com/bitcolibri/candlePrintGo v0.1.1
-## explicit; go 1.20
-github.com/bitcolibri/candlePrintGo
 # github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58
 ## explicit
 github.com/cloudflare/golz4
@@ -108,7 +102,7 @@ github.com/jackc/pgpassfile
 # github.com/jackc/pgproto3/v2 v2.2.0
 ## explicit; go 1.12
 github.com/jackc/pgproto3/v2
-# github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b
+# github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a
 ## explicit; go 1.14
 github.com/jackc/pgservicefile
 # github.com/jackc/pgtype v1.10.0
@@ -171,18 +165,12 @@ github.com/lann/builder
 # github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0
 ## explicit
 github.com/lann/ps
-# github.com/lucasb-eyer/go-colorful v1.2.0
-## explicit; go 1.12
-github.com/lucasb-eyer/go-colorful
 # github.com/mattn/go-colorable v0.1.11
 ## explicit; go 1.13
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.20
 ## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.14
-## explicit; go 1.9
-github.com/mattn/go-runewidth
 # github.com/milvus-io/milvus-proto/go-api/v2 v2.4.0
 ## explicit; go 1.18
 github.com/milvus-io/milvus-proto/go-api/v2/commonpb
@@ -204,28 +192,14 @@ github.com/mitchellh/copystructure
 # github.com/mitchellh/reflectwalk v1.0.2
 ## explicit
 github.com/mitchellh/reflectwalk
-# github.com/muesli/termenv v0.15.1
-## explicit; go 1.17
-github.com/muesli/termenv
-# github.com/piquette/finance-go v1.1.0
-## explicit; go 1.13
-github.com/piquette/finance-go
-github.com/piquette/finance-go/chart
-github.com/piquette/finance-go/datetime
-github.com/piquette/finance-go/form
-github.com/piquette/finance-go/iter
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/rivo/uniseg v0.2.0
-## explicit; go 1.12
-github.com/rivo/uniseg
 # github.com/rogpeppe/go-internal v1.10.0
 ## explicit; go 1.19
 github.com/rogpeppe/go-internal/fmtsort
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
-github.com/shopspring/decimal
 # github.com/spf13/pflag v1.0.5
 ## explicit; go 1.12
 github.com/spf13/pflag

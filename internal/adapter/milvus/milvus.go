@@ -157,6 +157,9 @@ func (m *Milvus) Flush(ctx context.Context) error {
 }
 
 func (m *Milvus) Close() error {
+	if m.client == nil {
+		return nil
+	}
 	// clean up
 	//_ = c.DropCollection(ctx, collectionName)
 	if err := m.client.Close(); err != nil {

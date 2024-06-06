@@ -4,6 +4,6 @@ import (
 	"context"
 )
 
-type service interface {
+type Service interface {
 	ImportFromStorageToDatabase(ctx context.Context) error
 }

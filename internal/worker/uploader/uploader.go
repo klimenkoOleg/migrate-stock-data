@@ -59,9 +59,9 @@ func (w *UploadWorker) Do(ctx context.Context, appCloser *common.Closer) error {
 	appCloser.AddCloser(reader)
 
 	go func() {
-		var tickService service = uploadticks.NewTickDumperService(repo, reader, w.config.LimitBatchSize)
+		var tickService Service = uploadticks.NewTickUploaderService(repo, reader, w.config.LimitBatchSize)
 		if err := tickService.ImportFromStorageToDatabase(ctx); err != nil {
-			log.Error("importing service", zap.Error(err))
+			log.Error("importing Service", zap.Error(err))
 		}
 
 		//if err := repo.Flush(ctx); err != nil {
@@ -97,9 +97,7 @@ type myQueryTracer struct {
 }
 
 func (t *myQueryTracer) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
-
 	for k, v := range data {
 		t.log.Debug("Executing command", zap.Any(k, v))
 	}
-
 }
